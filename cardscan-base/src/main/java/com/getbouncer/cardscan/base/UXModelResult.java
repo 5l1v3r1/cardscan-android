@@ -13,9 +13,9 @@ public class UXModelResult {
     @Nullable private UXModelEnum uxModelEnum;
 
     public UXModelResult(@NonNull float[] modelOutput) {
-        noCardScore = modelOutput[0];
-        panSideScore = modelOutput[1];
-        noPanSideScore = modelOutput[2];
+        noCardScore = -20;
+        panSideScore = modelOutput[0];
+        noPanSideScore = modelOutput[1];
         this.modelOutput = modelOutput;
 
         this.calculateResult();
@@ -37,24 +37,12 @@ public class UXModelResult {
     }
 
     private void calculateResult() {
-        int maxIndex = -1;
-        float maxValue = -1;
-        for (int i = 0; i < modelOutput.length; i++) {
-            if (modelOutput[i] > maxValue) {
-                maxValue = modelOutput[i];
-                maxIndex = i;
-            }
-        }
-        maxScore = maxValue;
-        if (maxIndex == 0) {
-            uxModelEnum = UXModelEnum.NO_PAN_SIDE;
-        } else if (maxIndex == 1) {
-            uxModelEnum = UXModelEnum.NO_CARD;
-        } else if (maxIndex == 2) {
-            //uxModelEnum = UXModelEnum.NO_PAN_SIDE;
+        if (panSideScore >= noPanSideScore) {
+            maxScore = panSideScore;
             uxModelEnum = UXModelEnum.PAN_SIDE;
         } else {
-            throw new EnumConstantNotPresentException(UXModelEnum.class, "Unexpected enum value " + maxIndex);
+            maxScore = panSideScore;
+            uxModelEnum = UXModelEnum.NO_PAN_SIDE;
         }
     }
 }

@@ -85,8 +85,8 @@ public abstract class ScanBaseActivity extends Activity implements Camera.Previe
     private HashMap<Expiry, Integer> expiryResults = new HashMap<>();
     private long firstValidPanResultMs = 0;
     private int mFlashlightId;
-    private int mCardNumberId;
-    private int mExpiryId;
+    protected int mCardNumberId;
+    protected int mExpiryId;
     private int mTextureId;
     private int mEnterCardManuallyId;
     protected float mRoiCenterYRatio;

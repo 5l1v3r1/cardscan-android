@@ -2,6 +2,7 @@ package com.getbouncer.cardscan.base;
 
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -26,6 +27,7 @@ public abstract class ModelFactory {
         long declaredLength = fileDescriptor.getDeclaredLength();
         MappedByteBuffer result = fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset,
                 declaredLength);
+        Log.d("Steven", "\n\n\nlength " + declaredLength + " resource " + resource);
         inputStream.close();
         fileDescriptor.close();
         return result;
