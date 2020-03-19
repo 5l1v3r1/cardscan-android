@@ -13,7 +13,7 @@ import java.util.List;
 public interface OnUXModelListener {
 
     void onUXModelPrediction(
-            @Nullable final Bitmap bitmap,
+            @Nullable final Bitmap ocrBitmap,
             @Nullable List<DetectedSSDBox> boxes,
             @Nullable final String number,
             final boolean isNumberValidPan,
@@ -23,8 +23,8 @@ public interface OnUXModelListener {
             @Nullable UXModelResult uxModelResult,
             int imageWidth,
             int imageHeight,
-            @NonNull final Bitmap fullScreenBitmap,
-            @NonNull final Bitmap originalBitmap
+            @NonNull final Bitmap screenDetectBitmap,
+            @NonNull final Bitmap objectDetectBitmap
     );
 
     void onObjectFatalError();
