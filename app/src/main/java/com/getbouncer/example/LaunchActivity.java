@@ -18,6 +18,7 @@ public class LaunchActivity extends AppCompatActivity implements View.OnClickLis
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_launch);
+        ScanActivity.apiKey = "IGF3Jl8YYbZwFCJ73AOFrbDRKaUj6cJo";
 
         findViewById(R.id.scan_button).setOnClickListener(this);
         findViewById(R.id.scanCardDebug).setOnClickListener(this);
