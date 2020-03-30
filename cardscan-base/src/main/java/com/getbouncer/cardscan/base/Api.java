@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets;
 
 
 public class Api {
-    @NonNull public static String baseUrl = "https://api.getbouncer.com";
+    @NonNull public static String baseUrl = "https://api-staging.getbouncer.com";
     @Nullable public static String apiKey = null;
 
     @NonNull
