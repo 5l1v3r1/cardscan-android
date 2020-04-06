@@ -67,11 +67,12 @@ public class SSDOcrModel extends ImageClassifier {
     static final int NUM_LOC = NUM_OF_COORDINATES * NUM_OF_PRIORS;
     static final int NUM_CLASS = NUM_OF_CLASSES * NUM_OF_PRIORS;
 
-    static final float PROB_THRESHOLD = 0.50f;
+    static final float PROB_THRESHOLD = 0.40f;
     static final float IOU_THRESHOLD = 0.50f;
     static final float CENTER_VARIANCE = 0.1f;
     static final float SIZE_VARIANCE = 0.2f;
     static final int TOP_K = 20;
+    static final float TOLERANCE = 1.4f;
     static final OcrFeatureMapSizes FEATURE_MAP_SIZES = new OcrFeatureMapSizes(
         38,
         24,

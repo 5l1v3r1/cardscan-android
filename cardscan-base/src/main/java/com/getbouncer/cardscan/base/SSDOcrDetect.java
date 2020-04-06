@@ -41,11 +41,19 @@ public class SSDOcrDetect {
     /** to store the YMax values of all the boxes */
     private final List<Float> yMaxArray = new ArrayList<Float>();
 
+
+    /** to store the width values of all the boxes */
+    private final List<Float> widthArray = new ArrayList<Float>();
+
+
     public final List<DetectedOcrBox> objectBoxes = new ArrayList<>();
     public boolean hadUnrecoverableException = false;
 
     /** We don't use the following two for now */
     public static boolean USE_GPU = false;
+
+    public SSDOcrDetect() {
+    }
 
     static boolean isInit() {
         return ssdOcrModel != null;
@@ -110,18 +118,25 @@ public class SSDOcrDetect {
             yMinArray.add(detectionBox.getRect().top * image.getHeight());
             // add the YMax value of the current box
             yMaxArray.add(detectionBox.getRect().bottom * image.getHeight());
+
+            // add the YMax value of the current box
+            widthArray.add(Math.abs(detectionBox.getRect().right * image.getWidth()
+                                    - detectionBox.getRect().left * image.getWidth()) );
         }
 
         Collections.sort(yMinArray);
         Collections.sort(yMaxArray);
+        Collections.sort(widthArray);
         float medianYMin = 0;
         float medianYMax = 0;
         float medianHeight = 0;
         float medianYCenter = 0;
+        float medianWidth = 0;
 
         if (!yMaxArray.isEmpty() && !yMinArray.isEmpty()) {
             medianYMin = yMinArray.get(yMinArray.size() / 2);
             medianYMax = yMaxArray.get(yMaxArray.size() / 2);
+            medianWidth = widthArray.get(widthArray.size() / 2);
             medianHeight = Math.abs(medianYMax - medianYMin);
             medianYCenter = (medianYMax + medianYMin) / 2;
         }
@@ -129,15 +144,17 @@ public class SSDOcrDetect {
         String numberOCR;
         StringBuilder num = new StringBuilder();
         for (DetectedOcrBox box : objectBoxes) {
-            if (Math.abs(box.rect.centerY() - medianYCenter) <= medianHeight) {
+            if (Math.abs(box.rect.centerY() - medianYCenter) <= medianHeight
+                    && box.rect.height() <= SSDOcrModel.TOLERANCE * medianHeight
+                    && box.rect.width() <= SSDOcrModel.TOLERANCE *  medianWidth) {
                 num.append(box.label);
             }
         }
         if (CreditCardUtils.isValidCardNumber(num.toString())){
             numberOCR = num.toString();
-            Log.d("OCR Number passed", numberOCR);
+            Log.e("OCR Number passed", numberOCR);
         } else {
-            Log.d("OCR Number failed", num.toString());
+            Log.e("OCR Number failed", num.toString());
             if (strict) {
                 numberOCR = null;
             } else {
