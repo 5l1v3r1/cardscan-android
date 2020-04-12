@@ -12,7 +12,7 @@ public class ResourceModelFactory extends ModelFactory {
     @NonNull
     @Override
     public MappedByteBuffer loadModelFile(@NonNull Context context) throws IOException{
-        return loadModelFromResource(context, R.raw.ssdbrexmetal);
+        return loadModelFromResource(context, R.raw.ssdbrex4gpuse17l00270);
     }
 
 }
