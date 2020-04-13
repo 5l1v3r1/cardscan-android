@@ -60,11 +60,133 @@ public class SSDOcrDetect {
     }
 
     @Nullable
+    private String processQuickRead(List<DetectionBox> detectionBoxes,
+                                    Bitmap image, Boolean strict){
+
+        String numberOCR;
+        StringBuilder num = new StringBuilder();
+
+       Collections.sort(detectionBoxes, new Comparator<DetectionBox>() {
+           @Override
+           public int compare(DetectionBox o1, DetectionBox o2) {
+               return Float.compare((o1.getRect().top / 2 + (o1.getRect().bottom / 2)),
+                       o2.getRect().top / 2 + (o2.getRect().bottom / 2));
+           }
+       });
+
+        List<DetectionBox> firstGroup = detectionBoxes.subList(0, 4);
+        List<DetectionBox> secondGroup = detectionBoxes.subList(4, 8);
+        List<DetectionBox> thirdGroup = detectionBoxes.subList(8, 12);
+        List<DetectionBox> fourthGroup = detectionBoxes.subList(12, 16);
+
+        Collections.sort(firstGroup, new Comparator<DetectionBox>() {
+            @Override
+            public int compare(DetectionBox o1, DetectionBox o2) {
+                return Float.compare(o1.getRect().left, o2.getRect().left);
+            }
+        });
+
+        for (DetectionBox box : firstGroup) {
+            num.append(box.getLabel());
+        }
+
+        Collections.sort(secondGroup, new Comparator<DetectionBox>() {
+            @Override
+            public int compare(DetectionBox o1, DetectionBox o2) {
+                return Float.compare(o1.getRect().left, o2.getRect().left);
+            }
+        });
+
+        for (DetectionBox box : secondGroup) {
+            num.append(box.getLabel());
+        }
+
+        Collections.sort(thirdGroup, new Comparator<DetectionBox>() {
+            @Override
+            public int compare(DetectionBox o1, DetectionBox o2) {
+                return Float.compare(o1.getRect().left, o2.getRect().left);
+            }
+        });
+
+        for (DetectionBox box : thirdGroup) {
+            num.append(box.getLabel());
+        }
+
+        Collections.sort(fourthGroup, new Comparator<DetectionBox>() {
+            @Override
+            public int compare(DetectionBox o1, DetectionBox o2) {
+                return Float.compare(o1.getRect().left, o2.getRect().left);
+            }
+        });
+
+        for (DetectionBox box : fourthGroup) {
+            num.append(box.getLabel());
+        }
+
+
+
+        if (CreditCardUtils.isValidCardNumber(num.toString())){
+            numberOCR = num.toString();
+            Log.e("OCR Number passed", numberOCR);
+        } else {
+            Log.e("OCR Number failed", num.toString());
+            if (strict) {
+                numberOCR = null;
+            } else {
+                numberOCR = num.toString();
+            }
+        }
+
+        return numberOCR;
+
+    }
+
+    private Boolean isQuickRead(List<DetectionBox> detectionBoxes, Bitmap image){
+
+        if (detectionBoxes.isEmpty() || detectionBoxes.size() != 16){
+            return false;
+        }
+
+
+        final List<Float> boxCenters = new ArrayList<Float>();
+        final List<Float> boxHeights = new ArrayList<Float>();
+        float aggregateDeviation = 0;
+
+        for (DetectionBox detectionBox : detectionBoxes) {
+
+            boxCenters.add((detectionBox.getRect().top * image.getHeight()
+                            + detectionBox.getRect().bottom * image.getHeight())/2);
+
+            boxHeights.add(Math.abs(detectionBox.getRect().top * image.getWidth()
+                    - detectionBox.getRect().bottom * image.getWidth()) );
+        }
+
+        Collections.sort(boxCenters);
+        float medianYCenter = boxCenters.get(boxCenters.size() / 2);
+        Collections.sort(boxHeights);
+        float medianHeight = boxHeights.get(boxHeights.size() / 2);
+
+        for (float center : boxCenters){
+            aggregateDeviation += Math.abs(medianYCenter - center);
+        }
+
+        if (aggregateDeviation > 2.0 * medianHeight)
+        {
+
+            return true;
+        }
+
+
+        return false;
+    }
+
+    @Nullable
     private String ssdOutputToPredictions(@NonNull Bitmap image, boolean strict) {
         if (ssdOcrModel == null || priors == null) {
             return null;
         }
 
+        String numberOCR;
         float[][] k_boxes = SSD.rearrangeOCRArray(ssdOcrModel.outputLocations, SSDOcrModel.FEATURE_MAP_SIZES,
                 SSDOcrModel.NUM_OF_PRIORS_PER_ACTIVATION, SSDOcrModel.NUM_OF_COORDINATES);
         k_boxes = ArrayExtensions.reshape(k_boxes, SSDOcrModel.NUM_OF_COORDINATES);
@@ -94,6 +216,14 @@ public class SSDOcrDetect {
                 }
             }
         );
+
+        if (isQuickRead(detectionBoxes, image)){
+            Log.e("Quick Read it is ", "Error");
+
+            numberOCR = processQuickRead(detectionBoxes, image, strict);
+            return numberOCR;
+
+        }
 
         Collections.sort(detectionBoxes, new Comparator<DetectionBox>() {
             @Override
@@ -141,7 +271,6 @@ public class SSDOcrDetect {
             medianYCenter = (medianYMax + medianYMin) / 2;
         }
 
-        String numberOCR;
         StringBuilder num = new StringBuilder();
         for (DetectedOcrBox box : objectBoxes) {
             if (Math.abs(box.rect.centerY() - medianYCenter) <= medianHeight
