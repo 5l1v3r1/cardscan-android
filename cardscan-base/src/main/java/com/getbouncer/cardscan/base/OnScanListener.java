@@ -18,5 +18,6 @@ interface OnScanListener {
             @Nullable final Bitmap screenDetectionBitmap,
             final long frameAddedTimeMs
     );
+
     void onFatalError();
 }

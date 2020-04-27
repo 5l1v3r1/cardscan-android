@@ -68,11 +68,12 @@ import java.util.concurrent.Semaphore;
  * (2) Call setViewIds to set these resource IDs and initalize appropriate handlers
  */
 public abstract class ScanBaseActivity extends Activity implements Camera.PreviewCallback,
-        View.OnClickListener, OnScanListener, OnObjectListener, OnCameraOpenListener {
+        View.OnClickListener, OnScanListener, OnObjectListener, OnCameraOpenListener, OnCardholderNameListener {
 
     protected Camera mCamera = null;
     private CameraPreview cameraPreview = null;
     protected static MachineLearningThread machineLearningThread = null;
+    protected static NameExtractionModelMachineLearningThread nameExtractionModelMachineLearningThread = null;
     protected Semaphore mMachineLearningSemaphore = new Semaphore(1);
     protected int mRotation;
     private boolean mSentResponse = false;
@@ -81,7 +82,7 @@ public abstract class ScanBaseActivity extends Activity implements Camera.Previe
     private HashMap<Expiry, Integer> expiryResults = new HashMap<>();
     private long firstValidPanResultMs = 0;
     private int mFlashlightId;
-    private int mCardNumberId;
+    protected int mCardNumberId;
     private int mExpiryId;
     private int mTextureId;
     private int mEnterCardManuallyId;
@@ -456,6 +457,16 @@ public abstract class ScanBaseActivity extends Activity implements Camera.Previe
         return machineLearningThread;
     }
 
+    @NonNull
+    static public NameExtractionModelMachineLearningThread getNameExtractionMachineLearningThread() {
+        if (nameExtractionModelMachineLearningThread == null) {
+            nameExtractionModelMachineLearningThread = new NameExtractionModelMachineLearningThread();
+            new Thread(nameExtractionModelMachineLearningThread).start();
+        }
+
+        return nameExtractionModelMachineLearningThread;
+    }
+
     @Override
     public void onPreviewFrame(@NonNull byte[] bytes, @NonNull Camera camera) {
         if (postToMachineLearningThread && mMachineLearningSemaphore.tryAcquire()) {
@@ -466,7 +477,7 @@ public abstract class ScanBaseActivity extends Activity implements Camera.Previe
 
             this.scanStats.incrementScans();
 
-            MachineLearningThread mlThread = getMachineLearningThread();
+            NameExtractionModelMachineLearningThread mlThread = getNameExtractionMachineLearningThread();
 
             Camera.Parameters parameters = camera.getParameters();
             int width = parameters.getPreviewSize().width;
@@ -478,18 +489,20 @@ public abstract class ScanBaseActivity extends Activity implements Camera.Previe
             if (mTestingImageReader == null) {
                 // Use the application context here because the machine learning thread's lifecycle
                 // is connected to the application and not this activity
-                if (mIsOcr) {
+                /*if (mIsOcr) {
                     mlThread.post(bytes, width, height, format, mRotation, this,
                             this.getApplicationContext(), mRoiCenterYRatio);
-                } else {
-                    mlThread.post(bytes, width, height, format, mRotation,this,
-                            this.getApplicationContext(), mRoiCenterYRatio, objectDetectFile);
+                } else */{
+                    Log.d("STEVEN", "posting image");
+                    mlThread.post(bytes, width, height, format, mRotation,this, this,
+                            this.getApplicationContext(), objectDetectFile, mRoiCenterYRatio);
                 }
             } else {
                 @Nullable Bitmap bm = mTestingImageReader.nextImage();
                 if (mIsOcr) {
                     mlThread.post(bm, this, this.getApplicationContext());
                 } else {
+                    Log.d("STEVEN", "huh");
                     mlThread.post(bm, this, this.getApplicationContext(),
                             objectDetectFile);
                 }
@@ -676,6 +689,31 @@ public abstract class ScanBaseActivity extends Activity implements Camera.Previe
 
         mMachineLearningSemaphore.release();
     }
+
+    public void onLegalNamePrediction(
+            @Nullable final String number,
+            @Nullable final Expiry expiry,
+            @NonNull final Bitmap ocrDetectionBitmap,
+            @Nullable final List<DetectedBox> digitBoxes,
+            @Nullable final DetectedBox expiryBox,
+            final List<DetectedSSDBox> boxes,
+            @Nullable final String legalName,
+            @NonNull final Bitmap objectDetectionBitmap,
+            @Nullable final Bitmap screenDetectionBitmap,
+            final long frameAddedTimeMs
+    ) {
+        this.onPrediction(
+                objectDetectionBitmap,
+                boxes,
+                ocrDetectionBitmap.getWidth(),
+                ocrDetectionBitmap.getHeight(),
+                screenDetectionBitmap,
+                frameAddedTimeMs
+        );
+
+        mMachineLearningSemaphore.release();
+    }
+
 
     /**
      * @param number String representation of the PAN

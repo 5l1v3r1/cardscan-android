@@ -34,7 +34,7 @@ public class ObjectDetect {
     @NonNull private final File ssdModelFile;
 
     @NonNull public List<DetectedSSDBox> objectBoxes = new ArrayList<>();
-    boolean hadUnrecoverableException = false;
+    public boolean hadUnrecoverableException = false;
 
     /** We don't use the following two for now */
     public static boolean USE_GPU = false;

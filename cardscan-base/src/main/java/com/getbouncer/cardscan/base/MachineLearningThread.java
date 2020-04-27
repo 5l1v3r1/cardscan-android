@@ -28,8 +28,9 @@ public class MachineLearningThread implements Runnable {
     protected static class RunArguments {
         @Nullable public final byte[] mFrameBytes;
         @Nullable public final Bitmap mBitmap;
-        @Nullable final OnScanListener mScanListener;
-        @Nullable final OnObjectListener mObjectListener;
+        @Nullable public final OnScanListener mScanListener;
+        @Nullable public final OnCardholderNameListener mCardholderNameListener;
+        @Nullable public final OnObjectListener mObjectListener;
         @Nullable public final OnUXModelListener mUXModelListener;
         @NonNull public final Context mContext;
         public final int mWidth;
@@ -38,9 +39,10 @@ public class MachineLearningThread implements Runnable {
         public final int mSensorOrientation;
         public final float mRoiCenterYRatio;
         public final boolean mIsOcr;
-        @Nullable final File mObjectDetectFile;
+        @Nullable public final File mObjectDetectFile;
         public final boolean mRunAdditionalOcr;
         public final boolean mRunUXModel;
+        public final boolean mRunNameExtractionModel;
         public final long frameAddedTimeMs;
 
         /**
@@ -71,6 +73,43 @@ public class MachineLearningThread implements Runnable {
             mRunAdditionalOcr = false;
             mRunUXModel = false;
             mUXModelListener = null;
+            mRunNameExtractionModel = false;
+            frameAddedTimeMs = System.currentTimeMillis();
+            mCardholderNameListener = null;
+        }
+
+        /**
+         * Used by MachineLearningThread for running OCR and maybe legal name on the main loop
+         */
+        RunArguments(
+                @Nullable byte[] frameBytes,
+                int width,
+                int height,
+                int format,
+                int sensorOrientation,
+                @Nullable OnObjectListener objectListener,
+                @Nullable OnCardholderNameListener cardholderlNameListener,
+                @NonNull Context context,
+                @Nullable File objectDetectFile,
+                float roiCenterYRatio
+        ) {
+            mFrameBytes = frameBytes;
+            mBitmap = null;
+            mWidth = width;
+            mHeight = height;
+            mFormat = format;
+            mScanListener = null;
+            mContext = context;
+            mSensorOrientation = sensorOrientation;
+            mRoiCenterYRatio = roiCenterYRatio;
+            mIsOcr = true;
+            mObjectListener = objectListener;
+            mObjectDetectFile = objectDetectFile;
+            mRunAdditionalOcr = false;
+            mRunUXModel = false;
+            mUXModelListener = null;
+            mRunNameExtractionModel = true;
+            mCardholderNameListener = cardholderlNameListener;
             frameAddedTimeMs = System.currentTimeMillis();
         }
 
@@ -103,7 +142,9 @@ public class MachineLearningThread implements Runnable {
             mObjectDetectFile = objectDetectFile;
             mRunAdditionalOcr = false;
             mRunUXModel = false;
+            mRunNameExtractionModel = false;
             frameAddedTimeMs = System.currentTimeMillis();
+            mCardholderNameListener = null;
         }
 
         /**
@@ -156,6 +197,8 @@ public class MachineLearningThread implements Runnable {
             mRunAdditionalOcr = runOcrModel;
             mRunUXModel = runUXModel;
             mUXModelListener = uxListener;
+            mRunNameExtractionModel = false;
+            mCardholderNameListener = null;
             frameAddedTimeMs = System.currentTimeMillis();
         }
 
@@ -184,6 +227,8 @@ public class MachineLearningThread implements Runnable {
             mRunAdditionalOcr = false;
             mRunUXModel = false;
             mUXModelListener = null;
+            mRunNameExtractionModel = false;
+            mCardholderNameListener = null;
             frameAddedTimeMs = System.currentTimeMillis();
         }
 
@@ -212,6 +257,8 @@ public class MachineLearningThread implements Runnable {
             mRunAdditionalOcr = false;
             mRunUXModel = false;
             mUXModelListener = null;
+            mRunNameExtractionModel = false;
+            mCardholderNameListener = null;
             frameAddedTimeMs = System.currentTimeMillis();
         }
     }
@@ -441,11 +488,13 @@ public class MachineLearningThread implements Runnable {
             @Nullable final Bitmap bitmapForScreenDetection,
             final long frameAddedTimeMs
     ) {
+        Log.d("STEVEN", "running object model " + args.mObjectListener);
         if (args.mObjectDetectFile == null) {
             Handler handler = new Handler(Looper.getMainLooper());
             handler.post(new Runnable() {
                 @Override
                 public void run() {
+                    Log.d("STEVEN", "null object detection file " + args.mObjectListener);
                     if (args.mObjectListener != null) {
                         args.mObjectListener.onPrediction(
                             bitmapForObjectDetection,
@@ -471,10 +520,12 @@ public class MachineLearningThread implements Runnable {
         handler.post(new Runnable() {
             public void run() {
                 try {
+                    Log.d("STEVEN", "valid object detection file " + args.mObjectListener);
                     if (args.mObjectListener != null) {
                         if (detect.hadUnrecoverableException) {
                             args.mObjectListener.onObjectFatalError();
                         } else {
+                            Log.d("STEVEN", "posting obj");
                             args.mObjectListener.onPrediction(
                                 bitmapForObjectDetection,
                                 detect.objectBoxes,

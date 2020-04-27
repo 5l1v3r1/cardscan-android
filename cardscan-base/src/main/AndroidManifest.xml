@@ -13,6 +13,11 @@
             android:configChanges="orientation"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.AppCompat.NoActionBar.FullScreen" />
+        <activity
+            android:name="com.getbouncer.cardverify.CardholderNameScanActivityImpl"
+            android:configChanges="orientation"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.NoActionBar.FullScreen" />
     </application>
 </manifest>
 

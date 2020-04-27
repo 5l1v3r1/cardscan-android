@@ -23,9 +23,9 @@ import java.util.List;
 
 public class ScanActivityImpl extends ScanBaseActivity {
     private static final String TAG = "ScanActivityImpl";
-    private ImageView mDebugImageView;
-    private boolean mInDebugMode = false;
-    private static long startTimeMs = 0;
+    protected ImageView mDebugImageView;
+    protected boolean mInDebugMode = false;
+    protected static long startTimeMs = 0;
 
     public static final String SCAN_CARD_TEXT = "scanCardText";
     public static final String POSITION_CARD_TEXT = "positionCardText";
@@ -96,6 +96,8 @@ public class ScanActivityImpl extends ScanBaseActivity {
         if (!mInDebugMode) {
             mDebugImageView.setVisibility(View.INVISIBLE);
         }
+        Log.d("STEVEN", "In debug mode: " + mInDebugMode);
+        mDebugImageView.setVisibility(View.VISIBLE);
 
         boolean showEnterCardManuallyButton = getIntent().getBooleanExtra(SHOW_ENTER_CARD_MANUALLY_BUTTON, false);
         TextView enterCardManuallyButton = findViewById(R.id.enterCardManuallyButton);
